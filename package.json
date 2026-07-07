@@ -1,0 +1,20 @@
+{
+  "name": "anti-provider",
+  "version": "1.0.0",
+  "description": "A standalone Node.js CLI chatbot and configuration tool mimicking the Google Cloud Code Assist Antigravity provider.",
+  "type": "module",
+  "main": "antigravity-chat.mjs",
+  "scripts": {
+    "start": "node antigravity-chat.mjs",
+    "config": "node antigravity-config.mjs"
+  },
+  "keywords": [
+    "antigravity",
+    "chatbot",
+    "gemini",
+    "claude",
+    "cli"
+  ],
+  "author": "",
+  "license": "ISC"
+}

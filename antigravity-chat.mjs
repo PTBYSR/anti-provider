@@ -9,6 +9,7 @@ const CLIENT_SECRET = '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';
 const REDIRECT_URI = 'http://localhost:51121/oauth-callback';
 const SCOPES = 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cclog https://www.googleapis.com/auth/experimentsandconfigs';
 const AUTH_FILE = path.join(process.cwd(), 'auth.json');
+const CONFIG_FILE = path.join(process.cwd(), 'config.json');
 const DEFAULT_PROJECT_ID = 'rising-fact-p41fc';
 
 // Antigravity specific headers and endpoints
@@ -28,6 +29,16 @@ const rl = readline.createInterface({
 
 let authData = null;
 let currentCodeVerifier = null;
+let currentModel = 'claude-opus-4-6-thinking';
+
+try {
+  if (fs.existsSync(CONFIG_FILE)) {
+    const configData = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    if (configData.model) currentModel = configData.model;
+  }
+} catch (e) {
+  // Ignore
+}
 
 function loadAuth() {
   try {
@@ -199,7 +210,7 @@ async function queryAntigravity(promptText) {
 
   const requestBody = {
     project: projectId,
-    model: 'claude-opus-4-6-thinking', // Use correct model tag
+    model: currentModel,
     requestType: 'agent',
     userAgent: 'antigravity',
     requestId: `agent-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
@@ -248,8 +259,16 @@ async function queryAntigravity(promptText) {
           authData = null;
           if (fs.existsSync(AUTH_FILE)) fs.unlinkSync(AUTH_FILE);
         } else {
-          const errorText = await response.text();
-          console.error(`\nAPI Error (${response.status}) on ${ENDPOINTS[i]}: ${errorText}`);
+          let errorText = await response.text();
+          try {
+            const jsonError = JSON.parse(errorText);
+            if (jsonError.error && jsonError.error.message) {
+              errorText = jsonError.error.message;
+            }
+          } catch (e) {
+            // Leave errorText as is if not JSON
+          }
+          console.error(`\nAPI Error (${response.status}) on ${ENDPOINTS[i]}:\n${errorText}\n`);
         }
         return;
       }
@@ -332,6 +351,23 @@ function startChat() {
 
     if (input === '/login') {
       startLoginFlow();
+      return;
+    }
+
+    if (input.startsWith('/model ')) {
+      const newModel = input.slice(7).trim();
+      if (newModel) {
+        currentModel = newModel;
+        try {
+          const configData = fs.existsSync(CONFIG_FILE) ? JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) : {};
+          configData.model = currentModel;
+          fs.writeFileSync(CONFIG_FILE, JSON.stringify(configData, null, 2), 'utf8');
+        } catch (e) { /* ignore */ }
+        console.log(`\nModel switched and saved to: ${currentModel}\n`);
+      } else {
+        console.log(`\nCurrent model is: ${currentModel}\n`);
+      }
+      rl.prompt();
       return;
     }
 
