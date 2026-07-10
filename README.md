@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="anti-provider-hero.png" alt="Piwa" width="100"/>
+</p>
+
 # Anti-Provider
 
 Anti-Provider is a lightweight, zero-dependency Node.js bridge that wraps your authenticated Google Cloud Code Assist ("Antigravity") session behind a standard **OpenAI-compatible REST API**.
