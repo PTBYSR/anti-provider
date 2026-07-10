@@ -1,63 +1,94 @@
-# Antigravity Proxy (anti-provider)
+# Anti-Provider
 
-A standalone Node.js CLI chatbot that mimics the authentication architecture and endpoints of the internal Google Cloud Code Assist Antigravity provider. 
+Anti-Provider is a lightweight, zero-dependency Node.js bridge that wraps your authenticated Google Cloud Code Assist ("Antigravity") session behind a standard **OpenAI-compatible REST API**.
 
-It allows you to securely authenticate via OAuth (PKCE flow) and interact with models like Gemini 3 Pro, Claude Opus, and GPT-OSS directly from your terminal.
+This allows you to use powerful Google-internal AI models (like Gemini 3 Flash, Claude Opus, and Claude Sonnet) directly inside your favorite AI coding environments—such as Cursor, Continue, Aider, Claude Code, or any other tool that accepts an OpenAI base URL and API key.
 
-## Features
+---
 
-- **Direct Antigravity API Access:** Fully authenticates your Google account against the internal Cloud Code API.
-- **Dynamic Project Discovery:** Automatically provisions and binds to your assigned sandbox Google Cloud project (`cloudaicompanionProject`).
-- **Endpoint Cascading:** Handles 403 and 404 errors by smartly cascading through Google's sandbox environments (`daily` -> `autopush` -> `prod`).
-- **Model Configuration CLI:** A separate tool to manage your default model globally without editing code.
+## ⚡ Quick Start: Get Your API Key
 
-## Installation
+Follow these steps to generate your local API key and start using the models immediately.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/PTBYSR/anti-provider.git
-   cd anti-provider
-   ```
-2. Make sure you have [Node.js](https://nodejs.org/) installed (v18+ recommended).
+### 1. Install & Authenticate
+Clone the repository. Since it has zero external dependencies, no `npm install` is required!
 
-## Usage
+```bash
+git clone https://github.com/PTBYSR/anti-provider.git
+cd anti-provider
+```
 
-### 1. Chatbot
-To start chatting, run:
+First, authenticate your Google account via OAuth 2.0 PKCE:
 ```bash
 npm start
 ```
-*or* `node antigravity-chat.mjs`
+When prompted in the chat interface, type `/login`. This will open your browser to log in with your Google account. Your session token is saved securely to a local `auth.json`. Once authenticated, you can exit the chat (`Ctrl+C`).
 
-On your first run, the script will prompt you to type `/login`. This generates an OAuth consent link. Open the link in your browser, approve the Google Cloud Code permissions, and the CLI will automatically intercept the callback and save your access tokens securely.
+### 2. Start the API Server
+Launch the OpenAI-compatible proxy server:
+```bash
+npm run server
+```
 
-Once authenticated, just type your prompt and press Enter.
+On the first run, the server will automatically generate a unique API Key (starting with `ap-`) and print it to your terminal. It will also bind to the first available port (default `3737`).
 
-**In-chat commands:**
-- `/login` : Re-authenticate and fetch new tokens.
-- `/model <tag>` : Switch the active AI model mid-conversation (e.g., `/model claude-3-5-sonnet`).
+### 3. Use Your API Key
+You can now point **any** OpenAI-compatible client to your local server!
 
-### 2. Configuration CLI
-To check your account status or change your default model, run:
+- **Base URL:** `http://localhost:3737/v1`
+- **API Key:** `ap-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+- **Available Models:** `gemini-3-flash`, `claude-opus-4-6-thinking`, `claude-sonnet-4-6`, `gpt-oss-120b-medium`, and more.
+
+**Example for Cursor / Continue:**
+Just add a new custom OpenAI provider in their settings using the Base URL and API Key above.
+
+---
+
+## 🛠️ Advanced Usage & Configuration
+
+### Features
+- **Zero Dependencies:** Built entirely using Node.js native modules (`http`, `crypto`, `fs`).
+- **Endpoint Cascading:** Automatically routes requests across Google's `daily`, `autopush`, and `prod` endpoints to maximize uptime and bypass sandbox limitations.
+- **Auto Token Refresh:** Silently refreshes your OAuth token in the background when it expires.
+- **Streaming & Buffering:** Fully supports both SSE streaming (`stream: true`) and buffered JSON responses for maximum client compatibility.
+- **Constant-Time Validation:** API key validation uses `crypto.timingSafeEqual` to prevent timing attacks.
+- **Built-in Chat Client:** Includes a sleek, dark-mode `test-chat.html` you can open in your browser to test the API directly.
+
+### Configuration (`config.json`)
+When you run the server, it creates a `config.json` file. You can modify this to set your default model or view your generated API key.
+
+```json
+{
+  "model": "gemini-3-flash",
+  "apiKey": "ap-38137c347030070fae20b6a84c17f2b33f6d47496a9c034f"
+}
+```
+
+You can also use the config CLI to manually manage your configuration:
 ```bash
 npm run config
 ```
-*or* `node antigravity-config.mjs`
 
-This brings up an interactive menu where you can:
-1. **View Status:** See the currently authenticated Gmail address and Project ID.
-2. **Change Model:** Pick from a numbered list of available Antigravity models to set as your global default.
+### Endpoints
+The server exposes the following endpoints on `http://localhost:3737`:
+- `GET /v1/models` - Lists all available Antigravity models in OpenAI format.
+- `POST /v1/chat/completions` - The main chat endpoint. Translates standard OpenAI JSON requests into the Antigravity format.
+- `GET /health` - Simple health check to verify server status and authentication state.
 
-## Supported Models
-- `claude-opus-4-6-thinking`
-- `claude-opus-4-5-thinking`
-- `claude-sonnet-4-6`
-- `claude-sonnet-4-5`
-- `claude-sonnet-4-5-thinking`
-- `gemini-3.1-pro-high`
-- `gemini-3.1-pro-low`
-- `gemini-3-flash`
-- `gpt-oss-120b-medium`
+### Using with Claude Code
+If you want to use this with Anthropic-specific tools (like the `claude` CLI), note that `claude` expects the Anthropic `/v1/messages` format, not OpenAI. To use Anti-Provider with Claude Code, you will need to pass it through a translation proxy (like FreeLLMAPI) or use an OpenAI-compatible agent instead.
 
-## Security
-This project uses the OAuth PKCE flow. Your access tokens and configuration preferences are saved locally in `auth.json` and `config.json` respectively. These files are added to `.gitignore` and are **never** pushed to the repository. 
+---
+
+## ⚖️ Legal & Disclaimer
+
+**Anti-Provider is an independent, unofficial developer tool.** 
+This project is provided "as is", without warranty of any kind. 
+
+- This tool acts solely as a local HTTP proxy wrapper around your own authenticated sessions. 
+- It does not distribute, host, or claim ownership over any Google APIs, endpoints, models, or internal Intellectual Property (IP).
+- All requests are made using the user's explicit consent and OAuth 2.0 tokens.
+- The developers of Anti-Provider are not affiliated, associated, authorized, endorsed by, or in any way officially connected with Google LLC or Alphabet Inc.
+- The terms "Cloud Code", "Antigravity", "Gemini", and related names are trademarks of their respective owners.
+
+Users are solely responsible for ensuring their usage of this proxy complies with the Terms of Service of their respective Google Cloud / Google Workspace agreements.
