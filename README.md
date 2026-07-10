@@ -40,11 +40,43 @@ You can now point **any** OpenAI-compatible client to your local server!
 - **Available Models:** `gemini-3-flash`, `claude-opus-4-6-thinking`, `claude-sonnet-4-6`, `gpt-oss-120b-medium`, and more.
 
 **Example for Cursor / Continue:**
-Just add a new custom OpenAI provider in their settings using the Base URL and API Key above.
+```yaml
+models:
+  - name: Anti-Provider
+    provider: openai
+    model: auto
+    apiBase: http://localhost:3737/v1
+    apiKey: ap-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
 
 ---
 
-## 🛠️ Advanced Usage & Configuration
+## 🧪 How to Test and Configure
+
+### Test your Login (Chat CLI)
+Use the interactive terminal chat as a gauge to verify your account login is working correctly:
+```bash
+npm start
+```
+If your current account gets rate-limited by the API, you can authorize a new account instantly from within the chat:
+```bash
+You: /login
+```
+
+### View/Configure your Setup (Config CLI)
+Need to quickly see your API key or change your default model?
+```bash
+npm run config
+```
+```text
+1. View API Key & Status
+2. Select Default Model
+3. Exit
+```
+
+---
+
+## 🛠️ Advanced Usage
 
 ### Features
 - **Zero Dependencies:** Built entirely using Node.js native modules (`http`, `crypto`, `fs`).
@@ -54,33 +86,14 @@ Just add a new custom OpenAI provider in their settings using the Base URL and A
 - **Constant-Time Validation:** API key validation uses `crypto.timingSafeEqual` to prevent timing attacks.
 - **Built-in Chat Client:** Includes a sleek, dark-mode `test-chat.html` you can open in your browser to test the API directly.
 
-### Built-in CLI Tools
-
-Anti-Provider comes with two powerful interactive CLIs:
-
-**1. The Chat CLI (`npm start`)**
-Beyond just authenticating, `npm start` launches a fully functional terminal chat interface where you can talk to the models directly without a web browser. 
-* **Handling Rate Limits:** If your account gets rate limited by the Cloud Code endpoints, simply type `/login` in the chat CLI. It will spin up the OAuth flow again, allowing you to authorize a *different* Google account and instantly bypass the limit.
-
-**2. The Config CLI (`npm run config`)**
-Run `npm run config` to launch an interactive menu that lets you:
-* View your current **API Key** and authentication status.
-* Select your **default model** from the available Antigravity models.
-* Easily switch models without having to edit JSON files manually.
-
 ### Configuration (`config.json`)
-When you run the server, it creates a `config.json` file. You can modify this to set your default model or view your generated API key.
+When you run the server, it creates a `config.json` file. You can modify this to set your default model or view your generated API key manually.
 
 ```json
 {
   "model": "gemini-3-flash",
   "apiKey": "ap-38137c347030070fae20b6a84c17f2b33f6d47496a9c034f"
 }
-```
-
-You can also use the config CLI to manually manage your configuration:
-```bash
-npm run config
 ```
 
 ### Endpoints
