@@ -54,6 +54,20 @@ Just add a new custom OpenAI provider in their settings using the Base URL and A
 - **Constant-Time Validation:** API key validation uses `crypto.timingSafeEqual` to prevent timing attacks.
 - **Built-in Chat Client:** Includes a sleek, dark-mode `test-chat.html` you can open in your browser to test the API directly.
 
+### Built-in CLI Tools
+
+Anti-Provider comes with two powerful interactive CLIs:
+
+**1. The Chat CLI (`npm start`)**
+Beyond just authenticating, `npm start` launches a fully functional terminal chat interface where you can talk to the models directly without a web browser. 
+* **Handling Rate Limits:** If your account gets rate limited by the Cloud Code endpoints, simply type `/login` in the chat CLI. It will spin up the OAuth flow again, allowing you to authorize a *different* Google account and instantly bypass the limit.
+
+**2. The Config CLI (`npm run config`)**
+Run `npm run config` to launch an interactive menu that lets you:
+* View your current **API Key** and authentication status.
+* Select your **default model** from the available Antigravity models.
+* Easily switch models without having to edit JSON files manually.
+
 ### Configuration (`config.json`)
 When you run the server, it creates a `config.json` file. You can modify this to set your default model or view your generated API key.
 
