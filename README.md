@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="anti-provider-hero.png" alt="Piwa" width="100"/>
+  <img src="anti-provider-hero.png" alt="Piwa" width="140"/>
 </p>
 
 # Anti-Provider
