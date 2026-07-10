@@ -4,12 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
 
-const CLIENT_ID = '1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const REDIRECT_URI = 'http://localhost:51121/oauth-callback';
-const SCOPES = 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cclog https://www.googleapis.com/auth/experimentsandconfigs';
-const AUTH_FILE = path.join(process.cwd(), 'auth.json');
-const CONFIG_FILE = path.join(process.cwd(), 'config.json');
+import { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, SCOPES, AUTH_FILE, CONFIG_FILE, loadAuth, saveAuth as saveAuthToFile, refreshAuthToken } from './auth-utils.mjs';
 const DEFAULT_PROJECT_ID = 'rising-fact-p41fc';
 
 // Antigravity specific headers and endpoints
@@ -40,20 +35,7 @@ try {
   // Ignore
 }
 
-function loadAuth() {
-  try {
-    if (fs.existsSync(AUTH_FILE)) {
-      authData = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8'));
-    }
-  } catch (err) {
-    // Ignore read errors
-  }
-}
 
-function saveAuth(data) {
-  authData = data;
-  fs.writeFileSync(AUTH_FILE, JSON.stringify(data, null, 2), 'utf8');
-}
 
 function generatePKCE() {
   const codeVerifier = crypto.randomBytes(32).toString('base64url');
@@ -112,12 +94,13 @@ function startLoginFlow() {
         try {
           const tokenData = await exchangeCodeForToken(code, currentCodeVerifier);
           const projectId = await discoverProject(tokenData.access_token);
-          saveAuth({
+          authData = {
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token,
             expires_at: Date.now() + (tokenData.expires_in * 1000),
             projectId: projectId
-          });
+          };
+          saveAuthToFile(authData);
           console.log('Authentication successful. You are now logged in!\n');
           rl.prompt();
         } catch (err) {
@@ -255,9 +238,26 @@ async function queryAntigravity(promptText) {
         }
         
         if (response.status === 401) {
-          console.error('\nToken expired or invalid. Please type /login to authenticate again.');
-          authData = null;
-          if (fs.existsSync(AUTH_FILE)) fs.unlinkSync(AUTH_FILE);
+          console.log('Token expired. Refreshing automatically in the background...');
+          try {
+            authData = await refreshAuthToken(authData);
+            response = await fetch(endpointUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authData.access_token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream',
+                'User-Agent': ANTIGRAVITY_USER_AGENT
+              },
+              body: JSON.stringify(requestBody)
+            });
+            if (!response.ok) throw new Error(`Refresh retry failed (${response.status})`);
+          } catch (e) {
+            console.error('\nToken expired and refresh failed. Please type /login to authenticate again.');
+            authData = null;
+            if (fs.existsSync(AUTH_FILE)) fs.unlinkSync(AUTH_FILE);
+            return;
+          }
         } else {
           let errorText = await response.text();
           try {
@@ -332,7 +332,7 @@ async function queryAntigravity(promptText) {
 }
 
 function startChat() {
-  loadAuth();
+  authData = loadAuth();
 
   if (!authData) {
     console.log('Google Cloud Code Assist requires OAuth authentication. Type /login to authenticate.\n');

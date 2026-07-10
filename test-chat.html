@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity Chat</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-color: #0f1115;
+            --panel-bg: #1a1d24;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --user-msg: #2563eb;
+            --bot-msg: #2dd4bf;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--panel-bg);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .header-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+        }
+
+        .config-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        select, input {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        /* Chat Area */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        .sender {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .message.user .sender {
+            text-align: right;
+            color: var(--user-msg);
+        }
+
+        .message.assistant .sender {
+            color: var(--bot-msg);
+        }
+
+        .bubble {
+            padding: 1rem 1.25rem;
+            border-radius: 1rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.user .bubble {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-bottom-right-radius: 0.25rem;
+            color: white;
+        }
+
+        .message.assistant .bubble {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 0.25rem;
+            white-space: pre-wrap;
+        }
+
+        /* Input Area */
+        .input-area {
+            background-color: var(--panel-bg);
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+        }
+
+        .input-container {
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            gap: 1rem;
+            position: relative;
+        }
+
+        textarea {
+            flex: 1;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 1rem;
+            padding-right: 4rem;
+            border-radius: 0.75rem;
+            font-family: inherit;
+            resize: none;
+            height: 60px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        button {
+            position: absolute;
+            right: 0.5rem;
+            top: 0.5rem;
+            bottom: 0.5rem;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            background-color: var(--border);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+            height: 24px;
+        }
+
+        .typing-indicator span {
+            width: 6px;
+            height: 6px;
+            background-color: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <div class="status-dot"></div>
+            Antigravity Test Client
+        </div>
+        <div class="config-bar">
+            <input type="text" id="api-key" placeholder="API Key" value="ap-38137c347030070fae20b6a84c17f2b33f6d47496a9c034f" style="width: 250px;">
+            <select id="model-select">
+                <option value="claude-opus-4-6-thinking">Claude Opus 4.6 (Thinking)</option>
+                <option value="gemini-3.1-pro-high">Gemini 3.1 Pro (High)</option>
+                <option value="gemini-3-flash">Gemini 3 Flash</option>
+                <option value="gpt-oss-120b-medium">GPT-OSS 120B</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="chat-container">
+        <div class="message assistant">
+            <div class="sender">Antigravity</div>
+            <div class="bubble">Hello! I am connected via your local API server. How can I help you today?</div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-container">
+            <textarea id="prompt-input" placeholder="Type a message... (Press Enter to send, Shift+Enter for new line)"></textarea>
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const promptInput = document.getElementById('prompt-input');
+        const sendBtn = document.getElementById('send-btn');
+        const apiKeyInput = document.getElementById('api-key');
+        const modelSelect = document.getElementById('model-select');
+
+        // Store conversation history for multi-turn chat
+        let messages = [];
+
+        function appendMessage(role, text, isStreaming = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'sender';
+            senderDiv.textContent = role === 'user' ? 'You' : 'Antigravity';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'bubble';
+            
+            if (isStreaming && !text) {
+                bubbleDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            } else {
+                bubbleDiv.textContent = text;
+            }
+
+            msgDiv.appendChild(senderDiv);
+            msgDiv.appendChild(bubbleDiv);
+            chatContainer.appendChild(msgDiv);
+            scrollToBottom();
+            
+            return bubbleDiv; // Return bubble so we can update it during streaming
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        async function handleSend() {
+            const text = promptInput.value.trim();
+            if (!text) return;
+
+            const apiKey = apiKeyInput.value.trim();
+            const model = modelSelect.value;
+
+            // UI Updates
+            promptInput.value = '';
+            promptInput.disabled = true;
+            sendBtn.disabled = true;
+
+            // Add user message to UI and history
+            appendMessage('user', text);
+            messages.push({ role: 'user', content: text });
+
+            // Create placeholder for assistant response
+            const responseBubble = appendMessage('assistant', '', true);
+            let fullResponse = '';
+
+            try {
+                const response = await fetch('http://localhost:3737/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: messages,
+                        stream: true
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error?.message || `HTTP error ${response.status}`);
+                }
+
+                // Process SSE stream
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                
+                // Clear the typing indicator
+                responseBubble.innerHTML = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (!line.startsWith('data:')) continue;
+                        const jsonStr = line.slice(5).trim();
+                        
+                        if (jsonStr === '[DONE]') continue;
+                        if (!jsonStr) continue;
+
+                        try {
+                            const chunk = JSON.parse(jsonStr);
+                            const content = chunk.choices?.[0]?.delta?.content;
+                            
+                            if (content) {
+                                fullResponse += content;
+                                responseBubble.textContent = fullResponse;
+                                scrollToBottom();
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse chunk:', jsonStr);
+                        }
+                    }
+                }
+
+                // Add to history once complete
+                if (fullResponse) {
+                    messages.push({ role: 'assistant', content: fullResponse });
+                }
+
+            } catch (err) {
+                console.error(err);
+                responseBubble.textContent = `❌ Error: ${err.message}`;
+                responseBubble.style.color = '#ef4444';
+            } finally {
+                // Restore UI
+                promptInput.disabled = false;
+                sendBtn.disabled = false;
+                promptInput.focus();
+            }
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', handleSend);
+        
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+    </script>
+</body>
+</html>

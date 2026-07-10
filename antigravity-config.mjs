@@ -1,9 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import readline from 'readline';
-
-const AUTH_FILE = path.join(process.cwd(), 'auth.json');
-const CONFIG_FILE = path.join(process.cwd(), 'config.json');
+import { loadJson, saveJson, loadAuth, refreshAuthToken, CONFIG_FILE, AUTH_FILE } from './auth-utils.mjs';
 
 const AVAILABLE_MODELS = [
   'gemini-3.1-pro-low',
@@ -23,23 +19,10 @@ const rl = readline.createInterface({
   prompt: '> '
 });
 
-function loadJson(filePath) {
-  try {
-    if (fs.existsSync(filePath)) {
-      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    }
-  } catch (err) {
-    // Ignore read errors
-  }
-  return null;
-}
 
-function saveJson(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-}
 
 async function viewStatus() {
-  const authData = loadJson(AUTH_FILE);
+  let authData = loadJson(AUTH_FILE);
   if (!authData || !authData.access_token) {
     console.log('\nNot authenticated. Please run the chatbot and type /login first.\n');
     return;
@@ -48,14 +31,29 @@ async function viewStatus() {
   console.log('\nFetching account details...\n');
 
   try {
-    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    let response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: {
         'Authorization': `Bearer ${authData.access_token}`
       }
     });
 
+    if (response.status === 401) {
+      console.log('Token expired. Refreshing automatically in the background...');
+      try {
+        authData = await refreshAuthToken(authData);
+        response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            'Authorization': `Bearer ${authData.access_token}`
+          }
+        });
+      } catch (e) {
+        console.log(`\nFailed to refresh token: ${e.message}. Please type /login in the chatbot.\n`);
+        return;
+      }
+    }
+
     if (!response.ok) {
-      console.log(`Failed to fetch user info (${response.status}). Token might be expired.`);
+      console.log(`Failed to fetch user info (${response.status}).`);
       return;
     }
 

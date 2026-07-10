@@ -6,7 +6,8 @@
   "main": "antigravity-chat.mjs",
   "scripts": {
     "start": "node antigravity-chat.mjs",
-    "config": "node antigravity-config.mjs"
+    "config": "node antigravity-config.mjs",
+    "server": "node antigravity-server.mjs"
   },
   "keywords": [
     "antigravity",
