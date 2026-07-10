@@ -69,9 +69,14 @@ Need to quickly see your API key or change your default model?
 npm run config
 ```
 ```text
-1. View API Key & Status
-2. Select Default Model
+Welcome to the Antigravity Configuration CLI!
+
+--- Antigravity Configuration Menu ---
+1. View architecture status (Gmail, Project, Model)
+2. Change default model
 3. Exit
+--------------------------------------
+Select an option (1-3): 1
 ```
 
 ---
